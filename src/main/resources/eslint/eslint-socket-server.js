@@ -1,0 +1,18 @@
+var net = require('net');
+
+var CLIEngine = require('eslint').CLIEngine;
+
+var cli = new CLIEngine();
+
+var PORT = process.argv[2];
+
+net.createServer(function (socket) {
+  'use strict';
+  
+  socket.on('data', function (data) {
+      var request = JSON.parse(data);
+      var report = cli.executeOnText(request.code, request.path);
+      socket.write(JSON.stringify(report) + '\n');
+  });
+
+}).listen(PORT);

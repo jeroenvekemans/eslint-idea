@@ -1,0 +1,41 @@
+plugins {
+    id 'org.jetbrains.intellij' version '0.0.35'
+    id "com.moowork.node" version "0.11"
+}
+
+defaultTasks 'npmInstall', 'test', 'buildPlugin'
+
+apply plugin: 'java'
+
+compileJava {
+    sourceCompatibility = 1.8
+    targetCompatibility = 1.8
+}
+
+version = '0.0.1'
+
+apply plugin: 'org.jetbrains.intellij'
+
+intellij {
+    version 'IC-15.0'
+    pluginName 'eslint-idea'
+}
+
+node {
+    nodeModulesDir = file("${project.projectDir}/src/main/resources/eslint")
+}
+
+dependencies {
+    compile 'commons-io:commons-io:2.4'
+    compile 'org.apache.commons:commons-exec:1.3'
+    compile 'com.google.code.gson:gson:2.5'
+
+    testCompile 'junit:junit:4.12'
+    testCompile 'org.mockito:mockito-all:1.10.19'
+}
+
+repositories {
+    jcenter()
+    mavenLocal()
+    mavenCentral()
+}

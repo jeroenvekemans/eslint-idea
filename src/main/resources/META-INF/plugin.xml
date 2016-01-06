@@ -1,0 +1,26 @@
+<idea-plugin version="2">
+  <id>be.jv.eslint-idea</id>
+  <name>eslint-idea</name>
+  <version>0.0.1</version>
+
+  <description><![CDATA[
+    ]]></description>
+
+  <change-notes><![CDATA[
+    ]]>
+  </change-notes>
+
+  <application-components>
+    <component>
+      <implementation-class>com.intellij.eslint_idea.internal.ESLintSocketServer</implementation-class>
+    </component>
+  </application-components>
+
+  <extensions defaultExtensionNs="com.intellij">
+    <externalAnnotator language="TEXT" implementationClass="com.intellij.eslint_idea.internal.ESLintAnnotator" />
+    <externalAnnotator language="JavaScript" implementationClass="com.intellij.eslint_idea.internal.ESLintAnnotator" />
+  </extensions>
+
+  <actions />
+
+</idea-plugin>
