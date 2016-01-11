@@ -1,7 +1,6 @@
 package com.intellij.eslint_idea.internal;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.when;
 
@@ -56,13 +55,6 @@ public class ESLintAnnotatorDoAnnotateTest {
 		when(file.getVirtualFile().getPath()).thenReturn(PATH);
 		when(file.getVirtualFile().getName()).thenReturn(PATH);
 		when(file.getText()).thenReturn(CODE);
-	}
-
-	@Test
-	public void shouldEmptyListWhenFileExtensionIsNotEqualToJs() {
-		when(file.getVirtualFile().getName()).thenReturn("ArbitraryFile.txt");
-
-		assertTrue(esLintAnnotator.doAnnotate(file).isEmpty());
 	}
 
 	@Test

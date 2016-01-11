@@ -13,6 +13,9 @@ import org.jetbrains.annotations.NotNull;
 
 import com.intellij.ide.plugins.IdeaPluginDescriptor;
 import com.intellij.ide.plugins.PluginManager;
+import com.intellij.notification.Notification;
+import com.intellij.notification.NotificationType;
+import com.intellij.notification.Notifications;
 import com.intellij.openapi.components.ApplicationComponent;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.extensions.PluginId;
@@ -29,21 +32,59 @@ public class ESLintSocketServer implements ApplicationComponent {
 	};
 	static final String PLUGIN_ID = "be.jv.eslint-idea";
 
-	private final String nodePath;
-	private int currentSocketPort;
-
-	public ESLintSocketServer() {
-		this.nodePath = determineNodePath();
-		LOGGER.info("Node path configured to be " + nodePath);
-	}
-
-	private String determineNodePath() {
-		return Arrays.stream(NODE_PATHS).filter(path -> new File(path).exists()).findFirst().orElseThrow(() -> new RuntimeException("Please install node.js"));
-	}
+	private int currentSocketPort = -1;
 
 	@Override
 	public void initComponent() {
-		new Thread(this::monitorNodeProcess).start();
+		new Thread(this::initializeESLintSocketServer).start();
+	}
+
+	private void initializeESLintSocketServer() {
+		String path = getNodeExecutablePath();
+
+		IdeaPluginDescriptor plugin = PluginManager.getPlugin(PluginId.getId(PLUGIN_ID));
+
+		if (plugin == null) {
+			throw new RuntimeException("No plugin descriptor could be found for plugin " + PLUGIN_ID);
+		}
+
+		String eslintSocketServerJS = plugin.getPath().getPath() +  "/classes/eslint/eslint-socket-server.js";
+
+		try {
+			int freeSocketPort = determineFreeSocketPort();
+			CommandLine commandLine = new CommandLine(path).addArgument(eslintSocketServerJS, false).addArgument(String.valueOf(freeSocketPort));
+			DefaultExecuteResultHandler resultHandler = new DefaultExecuteResultHandler();
+			DefaultExecutor executor = new DefaultExecutor();
+			executor.setProcessDestroyer(new ShutdownHookProcessDestroyer());
+
+			executor.execute(commandLine, resultHandler);
+			currentSocketPort = freeSocketPort;
+			LOGGER.info("ESLint server socket installed on port " + currentSocketPort + " with binary " + path);
+
+			resultHandler.waitFor();
+			LOGGER.error("ESLint server socket got killed on port " + currentSocketPort + ", please restart IntelliJ...");
+			Notifications.Bus.notify(new Notification("eslint","eslint-idea", "ESLint server socket got killed on port " + currentSocketPort + ", please restart IntelliJ...", NotificationType.ERROR));
+			currentSocketPort = -1;
+		} catch (IOException | InterruptedException e) {
+			LOGGER.error("ESLint server socket could not respond on port " + currentSocketPort);
+		}
+	}
+
+	private String getNodeExecutablePath() {
+		return Arrays.stream(NODE_PATHS).filter(path -> new File(path).exists()).findFirst().orElseThrow(
+				() -> {
+					String message = "eslint-idea plugin requires node.js to be installed in one of following folders: " + String.join("|", NODE_PATHS);
+					Notifications.Bus.notify(new Notification("eslint","eslint-idea", message, NotificationType.ERROR));
+					return new RuntimeException(message);
+				}
+		);
+	}
+
+	private int determineFreeSocketPort() throws IOException {
+		try (ServerSocket socket = new ServerSocket(0)) {
+			socket.setReuseAddress(true);
+			return socket.getLocalPort();
+		}
 	}
 
 	@Override
@@ -58,42 +99,6 @@ public class ESLintSocketServer implements ApplicationComponent {
 
 	public int getCurrentSocketPort() {
 		return currentSocketPort;
-	}
-
-	private void monitorNodeProcess() {
-		IdeaPluginDescriptor plugin = PluginManager.getPlugin(PluginId.getId(PLUGIN_ID));
-
-		if (plugin == null) {
-			throw new RuntimeException("No plugin descriptor could be found for plugin " + PLUGIN_ID);
-		}
-
-		String eslintSocketServerJS = plugin.getPath().getPath() +  "/classes/eslint/eslint-socket-server.js";
-
-		try {
-			int freeSocketPort = determineFreeSocketPort();
-			CommandLine commandLine = new CommandLine(nodePath).addArgument(eslintSocketServerJS, false).addArgument(String.valueOf(freeSocketPort));
-			DefaultExecuteResultHandler resultHandler = new DefaultExecuteResultHandler();
-			DefaultExecutor executor = new DefaultExecutor();
-			executor.setProcessDestroyer(new ShutdownHookProcessDestroyer());
-
-			executor.execute(commandLine, resultHandler);
-			currentSocketPort = freeSocketPort;
-			LOGGER.info("ESLint server socket installed on port " + currentSocketPort + " with binary " + nodePath);
-
-			resultHandler.waitFor();
-			LOGGER.warn("ESLint server socket got killed on port " + currentSocketPort + ", restarting engines...");
-		} catch (IOException | InterruptedException e) {
-			e.printStackTrace();
-		} finally {
-			monitorNodeProcess();
-		}
-	}
-
-	private int determineFreeSocketPort() throws IOException {
-		try (ServerSocket socket = new ServerSocket(0)) {
-			socket.setReuseAddress(true);
-			return socket.getLocalPort();
-		}
 	}
 
 }

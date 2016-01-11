@@ -1,12 +1,13 @@
 package com.intellij.eslint_idea.internal;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import com.google.gson.Gson;
+import com.intellij.eslint_idea.internal.ESLintSocketResponse.ESLintMessage;
+import com.intellij.eslint_idea.internal.ESLintSocketResponse.ESLintResult;
 import com.intellij.lang.annotation.AnnotationHolder;
 import com.intellij.lang.annotation.ExternalAnnotator;
 import com.intellij.lang.annotation.HighlightSeverity;
@@ -14,9 +15,6 @@ import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.PsiFile;
-
-import com.intellij.eslint_idea.internal.ESLintSocketResponse.ESLintMessage;
-import com.intellij.eslint_idea.internal.ESLintSocketResponse.ESLintResult;
 
 public class ESLintAnnotator extends ExternalAnnotator<PsiFile, List<ESLintResult>> {
 
@@ -34,16 +32,16 @@ public class ESLintAnnotator extends ExternalAnnotator<PsiFile, List<ESLintResul
 	@Nullable
 	@Override
 	public PsiFile collectInformation(@NotNull PsiFile file) {
+		if (!file.getVirtualFile().getName().endsWith(JAVASCRIPT_EXTENSION)) {
+			return null;
+		}
+
 		return file;
 	}
 
 	@Nullable
 	@Override
 	public List<ESLintResult> doAnnotate(final PsiFile collectedInfo) {
-		if (!collectedInfo.getVirtualFile().getName().endsWith(JAVASCRIPT_EXTENSION)) {
-			return new ArrayList<>();
-		}
-
 		return esLintSocketClient.sendRequest(
 				gson.toJson(new ESLintSocketRequest(collectedInfo.getText(), collectedInfo.getVirtualFile().getPath())),
 				response -> (gson.fromJson(response, ESLintSocketResponse.class)).getResults());

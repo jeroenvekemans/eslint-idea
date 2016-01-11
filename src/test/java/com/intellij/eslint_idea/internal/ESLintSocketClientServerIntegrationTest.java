@@ -22,7 +22,7 @@ import com.intellij.openapi.extensions.PluginId;
 @RunWith(MockitoJUnitRunner.class)
 public class ESLintSocketClientServerIntegrationTest {
 
-	private static final int NODE_STARTUP_DELAY = 1000;
+	private static final int NODE_STARTUP_DELAY = 2000;
 
 	private ESLintSocketClient esLintSocketClient;
 
@@ -63,21 +63,6 @@ public class ESLintSocketClientServerIntegrationTest {
 		String expected = "mirror-request-response";
 		String actual = esLintSocketClient.sendRequest(expected, response -> response);
 		assertEquals(expected, actual);
-	}
-
-	@Test
-	public void shouldReviveServerWhenStoppedWithFreshPort() throws InterruptedException {
-		esLintSocketServer.initComponent();
-
-		Thread.sleep(NODE_STARTUP_DELAY);
-
-		int initialPort = esLintSocketServer.getCurrentSocketPort();
-
-		esLintSocketClient.sendRequest("stop-server-request", response -> response);
-
-		Thread.sleep(NODE_STARTUP_DELAY);
-
-		assertNotEquals(initialPort, esLintSocketServer.getCurrentSocketPort());
 	}
 
 }

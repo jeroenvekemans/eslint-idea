@@ -1,10 +1,13 @@
 package com.intellij.eslint_idea.internal;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.mockito.Mockito.when;
 
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Answers;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
@@ -16,9 +19,10 @@ import com.intellij.psi.PsiFile;
 @RunWith(MockitoJUnitRunner.class)
 public class ESLintAnnotatorCollectInformationTest {
 
+	private static final String JAVASCRIPT_FILE = "code.js";
 	private ESLintAnnotator esLintAnnotator;
 
-	@Mock
+	@Mock(answer = Answers.RETURNS_DEEP_STUBS)
 	private PsiFile file;
 
 	@Mock
@@ -30,6 +34,7 @@ public class ESLintAnnotatorCollectInformationTest {
 	@Before
 	public void setup() {
 		ApplicationManager.setApplication(application, parent);
+		when(file.getVirtualFile().getName()).thenReturn(JAVASCRIPT_FILE);
 		esLintAnnotator = new ESLintAnnotator();
 	}
 
@@ -38,4 +43,9 @@ public class ESLintAnnotatorCollectInformationTest {
 		assertEquals(file, esLintAnnotator.collectInformation(file));
 	}
 
+	@Test
+	public void shouldReturnNullWhenNoJavaScriptExtension() {
+		when(file.getVirtualFile().getName()).thenReturn("code.hs");
+		assertNull(esLintAnnotator.collectInformation(file));
+	}
 }
