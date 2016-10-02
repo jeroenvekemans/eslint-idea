@@ -1,5 +1,5 @@
 plugins {
-    id 'org.jetbrains.intellij' version '0.0.35'
+    id 'org.jetbrains.intellij' version '0.1.6'
     id "com.moowork.node" version "0.11"
 }
 
@@ -17,7 +17,7 @@ version = '0.0.1'
 apply plugin: 'org.jetbrains.intellij'
 
 intellij {
-    version 'IC-15.0'
+    version '2016.2'
     pluginName 'eslint-idea'
 }
 
