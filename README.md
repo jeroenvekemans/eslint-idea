@@ -11,4 +11,4 @@
 
 Run `gradle` in root directory. Installable plugin ZIP can be found in `build/distributions` folder.
 
-CHANGE
+CHANGE2
